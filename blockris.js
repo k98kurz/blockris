@@ -16,8 +16,8 @@ function generateGameSpace(width, height){
 
 function plotMatrix(matrix, colorMap){
     let rows = [];
-    let nothing = " ";
-    let block = "█";
+    let nothing = "  ";
+    let block = "██";
     for(let a = 0; a < matrix.length; a++){
         let row = "";
         for(let b = 0; b < matrix[a].length; b++){
