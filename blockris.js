@@ -262,6 +262,7 @@ class Shape {
         if (offsetY < ymin || offsetY > ymax) return 0;
         let row = this.matrix[rowNum];
         this.matrix.splice(rowNum, 1);
+        this.moveDown();
         return row.reduce((p, c) => p + c);
     }
 }
@@ -345,13 +346,14 @@ class Display {
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.shapes = [];
+        this.score = 0;
     }
 
     addShape(shape) {
         this.shapes.push(shape);
     }
 
-    draw(shapes) {
+    getFullGameMatrix(shapes) {
         let gameSpace = generateGameSpace(this.sizeX, this.sizeY);
         let colorMap = generateGameSpace(this.sizeX, this.sizeY);
         replaceMatrixValues(colorMap, {0: Reset});
@@ -364,7 +366,33 @@ class Display {
             shape.draw(gameSpace);
             combineMatrices(colorMap, shape.colorMatrix());
         });
+        return [gameSpace, colorMap];
+    }
+
+    draw(shapes) {
+        console.log(`Score: ${this.score}`);
+        let [gameSpace, colorMap] = this.getFullGameMatrix(shapes);
         plotMatrix(gameSpace, colorMap);
+    }
+
+    deleteFullRow(shapes) {
+        let [gameSpace, _] = this.getFullGameMatrix(shapes);
+        let allShapes = [...this.shapes, ...shapes];
+        for (let y=0; y<gameSpace.length; y++) {
+            for (let x=0; x<gameSpace[y].length; x++) {
+                if (gameSpace[y][x] == 0) break;
+                if (x == gameSpace[y].length - 1) {
+                    return allShapes.reduce((p, s) => p + s.removeRow(y), 0);
+                }
+            }
+        }
+        return 0;
+    }
+
+    removeGarbage(shapes) {
+        this.shapes = this.shapes.filter(s => s.matrix.length > 0);
+        shapes = shapes || [];
+        return shapes.filter(s => s.matrix.length > 0);
     }
 }
 
