@@ -1,4 +1,3 @@
-const readline = require('readline');
 const {
     Reset, Bright, Dim, Underscore, Blink, Reverse, Hidden, FgBlack, FgRed,
     FgGreen, FgYellow, FgBlue, FgMagenta, FgCyan, FgWhite, FgGray, BgBlack,
@@ -309,5 +308,5 @@ class Display {
 
 module.exports = {
     Shape, Tee, Square, LShape, JShape, Line, RSquiggle, LSquiggle, Display,
-    plotMatrix
+    plotMatrix, displayMatrix
 }
