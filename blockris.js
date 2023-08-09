@@ -1,20 +1,33 @@
 const readline = require('readline');
+const {
+    Reset, Bright, Dim, Underscore, Blink, Reverse, Hidden, FgBlack, FgRed,
+    FgGreen, FgYellow, FgBlue, FgMagenta, FgCyan, FgWhite, FgGray, BgBlack,
+    BgRed, BgGreen, BgYellow, BgBlue, BgMagenta, BgCyan, BgWhite, BgGray
+} = require('./colors.js');
+
 
 function generateGameSpace(width, height){
     let space = [];
     for(let b = 0; b < height; b++){
-        space.push(Array(width));
+        space.push(Array(width).fill(0));
     }
     return space;
 }
 
-function plotMatrix(matrix){
+function plotMatrix(matrix, colorMap){
     let rows = [];
-    let nothing = ".";
+    let nothing = " ";
     let block = "█";
     for(let a = 0; a < matrix.length; a++){
         let row = "";
         for(let b = 0; b < matrix[a].length; b++){
+            if (colorMap) {
+                if (a < colorMap.length && b < colorMap[a].length) {
+                    row += colorMap[a][b];
+                } else {
+                    row += Reset;
+                }
+            }
             if(matrix[a][b]){
                 row += block;
             } else {
@@ -27,6 +40,18 @@ function plotMatrix(matrix){
     for(let c = 0; c < rows.length; c++){
         console.log(rows[c]);
     }
+}
+
+function displayMatrix(matrix) {
+    for (let i = 0; i < matrix.length; i++) {
+        let row = "" + matrix[i][0];
+        for (let j = 1; j < matrix[i].length; j++) {
+            row += ",";
+            row += matrix[i][j];
+        }
+        console.log(row);
+    }
+    console.log("\n");
 }
 
 function rotateRight(matrix){
@@ -53,7 +78,7 @@ function rotateLeft(matrix){
     return newMatrix;
 }
 
-function assignOffset(shape){
+function calculateOffsetMatrix(shape){
     let offsetX = shape.position[0];
     let offsetY = shape.position[1];
     let offsetMatrix = [];
@@ -71,19 +96,19 @@ function assignOffset(shape){
     return offsetMatrix;
 }
 
-function combineMatrices(gameSpace, matrix){
-    for(let a = 0; a < matrix.length; a++){
-        for(let b = 0; b < matrix[a].length; b++){
-            if(matrix[a][b] == 1){
-                gameSpace[a][b] = 1;
+function combineMatrices(matrix1, matrix2){
+    for(let a = 0; a < matrix2.length; a++){
+        for(let b = 0; b < matrix2[a].length; b++){
+            if(matrix2[a][b]){
+                matrix1[a][b] = matrix2[a][b];
             }
         }
     }
 }
 
 function shapesTouch(shape1, shape2) {
-    let matrix1 = assignOffset(shape1);
-    let matrix2 = assignOffset(shape2);
+    let matrix1 = calculateOffsetMatrix(shape1);
+    let matrix2 = calculateOffsetMatrix(shape2);
 
     for (let y = 0; y < matrix1.length; y++) {
         if (y >= matrix2.length) break;
@@ -101,11 +126,22 @@ function shapesTouch(shape1, shape2) {
     return false; // no touches found
 }
 
+function replaceMatrixValues(matrix, map) {
+    for (let i = 0; i < matrix.length; i++) {
+        for (let j = 0; j < matrix[i].length; j++) {
+            if (map.hasOwnProperty(matrix[i][j])) {
+                matrix[i][j] = map[matrix[i][j]];
+            }
+        }
+    }
+}
+
 
 class Shape {
-    constructor(matrix, position) {
+    constructor(matrix, position, color) {
         this.matrix = matrix;
         this.position = position;
+        this.color = color;
     }
 
     translate(x, y) {
@@ -148,8 +184,18 @@ class Shape {
     }
 
     draw(gameSpace) {
-        combineMatrices(gameSpace, assignOffset(this));
+        combineMatrices(gameSpace, calculateOffsetMatrix(this));
         return this;
+    }
+
+    fullMatrix() {
+        return calculateOffsetMatrix(this);
+    }
+
+    colorMatrix() {
+        let colorMatrix = calculateOffsetMatrix(this);
+        replaceMatrixValues(colorMatrix, {1: this.color});
+        return colorMatrix;
     }
 
     touches(otherShape) {
@@ -158,69 +204,76 @@ class Shape {
 }
 
 class Tee extends Shape {
-    constructor(position) {
+    constructor(position, color) {
+        color = color || "";
         super([
             [0,1,0],
             [1,1,1]
-        ], position);
+        ], position, color);
     }
 }
 
 class Square extends Shape {
-    constructor(position) {
+    constructor(position, color) {
+        color = color || "";
         super([
             [1, 1],
             [1, 1]
-        ], position);
+        ], position, color);
     }
 }
 
 class LShape extends Shape {
-    constructor(position) {
+    constructor(position, color) {
+        color = color || "";
         super([
             [1, 0],
             [1, 0],
             [1, 1]
-        ], position)
+        ], position, color);
     }
 }
 
 class JShape extends Shape {
-    constructor(position) {
+    constructor(position, color) {
+        color = color || "";
         super([
             [0, 1],
             [0, 1],
             [1, 1]
-        ], position)
+        ], position, color);
     }
 }
 
 class Line extends Shape {
-    constructor(position) {
+    constructor(position, color) {
+        color = color || "";
         super([
             [1],
             [1],
             [1],
             [1]
-        ], position)
+        ], position, color);
     }
 }
 
 class RSquiggle extends Shape {
-    constructor(position) {
+    constructor(position, color) {
+        color = color || "";
         super([
             [0, 1, 1],
             [1, 1, 0]
-        ], position)
+        ], position, color);
     }
 }
 
 class LSquiggle extends Shape {
-    constructor(position) {
+    constructor(position, color) {
+        color = color || "";
         super([
             [1, 1, 0],
             [0, 1, 1]
-        ], position)
+        ], position, color);
     }
 }
 
@@ -237,14 +290,18 @@ class Display {
 
     draw(shapes) {
         let gameSpace = generateGameSpace(this.sizeX, this.sizeY);
-        shapes = shapes || [];
+        let colorMap = generateGameSpace(this.sizeX, this.sizeY);
+        replaceMatrixValues(colorMap, {0: Reset});
+        shapes = shapes ?? [];
         shapes.forEach(shape => {
             shape.draw(gameSpace);
+            combineMatrices(colorMap, shape.colorMatrix());
         });
         this.shapes.forEach(shape => {
             shape.draw(gameSpace);
+            combineMatrices(colorMap, shape.colorMatrix());
         });
-        return gameSpace;
+        plotMatrix(gameSpace, colorMap);
     }
 }
 
