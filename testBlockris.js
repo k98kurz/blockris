@@ -1,6 +1,5 @@
 const {
-    Display, LShape, JShape, Square, Tee, Line, RSquiggle, LSquiggle,
-    plotMatrix
+    Display, LShape, JShape, Square, Tee, Line, RSquiggle, LSquiggle
 } = require("./blockris.js");
 
 const {
@@ -22,7 +21,5 @@ let rsquig = new RSquiggle([3, 5], FgWhite);
 display.addShape(rsquig);
 let lsquig = new LSquiggle([17, 5], FgBlue);
 display.addShape(lsquig);
-
-// display.shapes.forEach(shape => shape.moveRight().moveDown());
 
 display.draw();
