@@ -98,6 +98,9 @@ function calculateOffsetMatrix(shape){
 }
 
 function combineMatrices(matrix1, matrix2){
+    if (matrix2.length > matrix1.length || matrix2[0].length > matrix1[0].length) {
+        return;
+    }
     for(let a = 0; a < matrix2.length; a++){
         for(let b = 0; b < matrix2[a].length; b++){
             if(matrix2[a][b]){
@@ -117,11 +120,28 @@ function shapesTouch(shape1, shape2) {
             if (x > matrix2[y].length) break;
             if (matrix1[y][x] == 0) continue;
 
-            if (matrix2[y][x] == 1) return true; // identical cells
+            if (matrix2[y][x] == 1) return true; // identical voxels
             if (y > 0 && matrix2[y-1][x] == 1) return true; // above
             if (y < matrix2.length - 1 && matrix2[y+1][x] == 1) return true; // below
             if (x > 0 && matrix2[y][x-1] == 1) return true; // left
             if (x < matrix2[y].length && matrix2[y][x+1] == 1) return true; // right
+        }
+    }
+    return false; // no touches found
+}
+
+function shapeOnTopOfShape(shape1, shape2) {
+    let matrix1 = calculateOffsetMatrix(shape1);
+    let matrix2 = calculateOffsetMatrix(shape2);
+
+    for (let y = 0; y < matrix1.length; y++) {
+        if (y >= matrix2.length) break;
+        for (let x = 0; x < matrix1[y].length; x++) {
+            if (x > matrix2[y].length) break;
+            if (matrix1[y][x] == 0) continue;
+
+            if (matrix2[y][x] == 1) return true; // identical voxels
+            if (y < matrix2.length - 1 && matrix2[y+1][x] == 1) return true; // shape2 below
         }
     }
     return false; // no touches found
@@ -201,6 +221,18 @@ class Shape {
 
     touches(otherShape) {
         return shapesTouch(this, otherShape);
+    }
+
+    touchesTopOf(otherShape) {
+        return shapeOnTopOfShape(this, otherShape);
+    }
+
+    touchingBottom(bottomY) {
+        return this.position[1] + this.matrix.length >= bottomY;
+    }
+
+    touchingSide(maxWidth) {
+        return (this.position[0] == 0) || (this.position[0] + this.matrix[0].length >= maxWidth);
     }
 }
 
