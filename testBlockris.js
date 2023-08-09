@@ -20,7 +20,7 @@ let line = new Line([0, 4], FgCyan);
 display.addShape(line);
 let rsquig = new RSquiggle([3, 5], FgWhite);
 display.addShape(rsquig);
-let lsquig = new LSquiggle([8, 5], FgBlue);
+let lsquig = new LSquiggle([17, 5], FgBlue);
 display.addShape(lsquig);
 
 // display.shapes.forEach(shape => shape.moveRight().moveDown());

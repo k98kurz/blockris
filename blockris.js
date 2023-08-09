@@ -19,7 +19,7 @@ function plotMatrix(matrix, colorMap){
     let nothing = "  ";
     let block = "██";
     for(let a = 0; a < matrix.length; a++){
-        let row = "";
+        let row = Reset + FgGray + "▐";
         for(let b = 0; b < matrix[a].length; b++){
             if (colorMap) {
                 if (a < colorMap.length && b < colorMap[a].length) {
@@ -34,8 +34,8 @@ function plotMatrix(matrix, colorMap){
                 row += nothing;
             }
         }
+        row += Reset + FgGray + "▌";
         rows.push(row);
-        row = "";
     }
     for(let c = 0; c < rows.length; c++){
         console.log(rows[c]);
