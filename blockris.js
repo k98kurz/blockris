@@ -147,6 +147,22 @@ function shapeOnTopOfShape(shape1, shape2) {
     return false; // no touches found
 }
 
+function shapesOverlap(shape1, shape2) {
+    let matrix1 = calculateOffsetMatrix(shape1);
+    let matrix2 = calculateOffsetMatrix(shape2);
+
+    for (let y = 0; y < matrix1.length; y++) {
+        if (y >= matrix2.length) break;
+        for (let x = 0; x < matrix1[y].length; x++) {
+            if (x > matrix2[y].length) break;
+            if (matrix1[y][x] == 0) continue;
+
+            if (matrix2[y][x] == 1) return true; // identical voxels
+        }
+    }
+    return false; // no touches found
+}
+
 function replaceMatrixValues(matrix, map) {
     for (let i = 0; i < matrix.length; i++) {
         for (let j = 0; j < matrix[i].length; j++) {
@@ -227,12 +243,26 @@ class Shape {
         return shapeOnTopOfShape(this, otherShape);
     }
 
+    overlapsWith(otherShape) {
+        return shapesOverlap(this, otherShape);
+    }
+
     touchingBottom(bottomY) {
         return this.position[1] + this.matrix.length >= bottomY;
     }
 
     touchingSide(maxWidth) {
         return (this.position[0] == 0) || (this.position[0] + this.matrix[0].length >= maxWidth);
+    }
+
+    removeRow(offsetY) {
+        let rowNum = offsetY - this.position[1];
+        let ymin = this.position[1];
+        let ymax = ymin + this.matrix.length;
+        if (offsetY < ymin || offsetY > ymax) return 0;
+        let row = this.matrix[rowNum];
+        this.matrix.splice(rowNum, 1);
+        return row.reduce((p, c) => p + c);
     }
 }
 
