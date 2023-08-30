@@ -6,14 +6,17 @@ const {
     FgGreen, FgYellow, FgBlue, FgMagenta, FgCyan, FgWhite, FgRed
 } = require("./colors.js");
 
+const keypress = require('keypress');
 
-const DISPLAY_WIDTH = 50;
-const DISPLAY_HEIGHT = 25;
+const DISPLAY_WIDTH = 20;
+const DISPLAY_HEIGHT = 27;
 
 let display = new Display(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 let center = DISPLAY_WIDTH / 2 | 1;
 const shapeTypes = [LShape, JShape, Square, Tee, Line, RSquiggle, LSquiggle];
 const colors = [FgGreen, FgYellow, FgBlue, FgMagenta, FgCyan, FgWhite, FgRed];
+let shapes = [];
+let currentShape = null;
 
 function randomShape() {
     let shapeIdx = Math.floor(Math.random() * 7);
@@ -21,6 +24,13 @@ function randomShape() {
     let shape = new shapeTypes[shapeIdx]([0, 0], colors[colorIdx]);
     shape.position[0] = center - shape.matrix[0].length;
     return shape;
+}
+
+function checkCollision(currentShape) {
+    if (currentShape.touchingBottom(display.sizeY)) return true;
+    return shapes.reduce((p, s) =>
+        ((s !== currentShape) && currentShape.touchesTopOf(s)) || p
+    , false);
 }
 
 if (process.argv.length < 3 || process.argv[2] == 'shapes') {
@@ -44,16 +54,6 @@ if (process.argv.length < 3 || process.argv[2] == 'shapes') {
 }
 
 if (process.argv.length > 2 && process.argv[2] == 'stack') {
-    let shapes = [];
-    let currentShape = null;
-
-    function checkCollision(currentShape) {
-        if (currentShape.touchingBottom(display.sizeY)) return true;
-        return shapes.reduce((p, s) =>
-            ((s !== currentShape) && currentShape.touchesTopOf(s)) || p
-        , false);
-    }
-
     function refresh() {
         if (currentShape == null) {
             currentShape = randomShape();
@@ -80,7 +80,6 @@ if (process.argv.length > 2 && process.argv[2] == 'stack') {
 if (process.argv.length > 2 && process.argv[2] == 'row') {
     let currentColorIdx = 0;
     let currentX = 0;
-    let shapes = [];
     function doit() {
         console.clear();
         let score = display.deleteFullRow(shapes);
@@ -104,4 +103,74 @@ if (process.argv.length > 2 && process.argv[2] == 'row') {
         }
     }
     doit();
+}
+
+if (process.argv.length > 2 && process.argv[2] == 'game') {
+    // make `process.stdin` begin emitting "keypress" events
+    keypress(process.stdin);
+
+    // listen for the "keypress" event
+    process.stdin.on('keypress', function (ch, key) {
+        // console.log('got "keypress"', key);
+        if (! key) return;
+        if (key && key.ctrl && key.name == 'c') {
+            process.exit();
+        }
+        switch (key.name) {
+            case "right":
+                currentShape.moveRight();
+                updateDisplay();
+                break;
+            case "left":
+                currentShape.moveLeft();
+                updateDisplay();
+                break;
+            case "space":
+                while (!checkCollision(currentShape)) {
+                    currentShape.moveDown();
+                }
+                updateDisplay();
+                break;
+            case "e":
+                currentShape.rotateRight();
+                updateDisplay();
+                break;
+            case "q":
+                currentShape.rotateLeft();
+                updateDisplay();
+                break;
+        }
+    });
+
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+
+    let currentShape = randomShape();
+    display.addShape(currentShape);
+    shapes.push(currentShape);
+
+    function updateDisplay() {
+        console.clear();
+        display.draw();
+    }
+
+    function updateGame() {
+        if (checkCollision(currentShape)) {
+            currentShape = randomShape();
+            display.addShape(currentShape);
+            shapes.push(currentShape);
+            updateDisplay();
+            if (checkCollision(currentShape) && currentShape.position[1] == 0) {
+                console.log(`Game over. Final score: ${display.score}`);
+                process.exit();
+            }
+        }
+
+        currentShape.moveDown();
+        display.score += display.deleteFullRow([]);
+        shapes = display.removeGarbage(shapes);
+        updateDisplay();
+    }
+
+    setInterval(updateGame, 500);
 }
