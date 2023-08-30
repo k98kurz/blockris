@@ -26,11 +26,18 @@ function randomShape() {
     return shape;
 }
 
+function newShape(shapeIdx) {
+    let colorIdx = Math.floor(Math.random() * 7);
+    let shape = new shapeTypes[shapeIdx]([0, 0], colors[colorIdx]);
+    shape.position[0] = center - shape.matrix[0].length;
+    return shape;
+}
+
 function checkCollision(currentShape) {
     if (currentShape.touchingBottom(display.sizeY)) return true;
     return shapes.reduce((p, s) =>
         ((s !== currentShape) && currentShape.touchesTopOf(s)) || p
-    , false);
+        , false);
 }
 
 if (process.argv.length < 3 || process.argv[2] == 'shapes') {
@@ -97,7 +104,7 @@ if (process.argv.length > 2 && process.argv[2] == 'row') {
             shapes.push(new Line([currentX, 2], colors[currentColorIdx]).rotateLeft());
             currentColorIdx = (currentColorIdx + 1) % colors.length;
             currentX += 4;
-            while (currentX+4 > display.sizeX) currentX -= 1;
+            while (currentX + 4 > display.sizeX) currentX -= 1;
             display.draw(shapes);
             setTimeout(doit, 250);
         }
@@ -108,11 +115,41 @@ if (process.argv.length > 2 && process.argv[2] == 'row') {
 if (process.argv.length > 2 && process.argv[2] == 'game') {
     // make `process.stdin` begin emitting "keypress" events
     keypress(process.stdin);
+    let interval = 0;
 
     // listen for the "keypress" event
     process.stdin.on('keypress', function (ch, key) {
-        // console.log('got "keypress"', key);
-        if (! key) return;
+        // console.log('got "keypress"', ch, key);
+        if (["1", "2", "3", "4", "5", "6", "7"].indexOf(ch) != -1) {
+            display.shapes = display.shapes.filter(p => p != currentShape);
+            switch (ch) {
+                case "1":
+                    currentShape = newShape(0);
+                    break;
+                case "2":
+                    currentShape = newShape(1);
+                    break;
+                case "3":
+                    currentShape = newShape(2);
+                    break;
+                case "4":
+                    currentShape = newShape(3);
+                    break;
+                case "5":
+                    currentShape = newShape(4);
+                    break;
+                case "6":
+                    currentShape = newShape(5);
+                    break;
+                case "7":
+                    currentShape = newShape(6);
+                    break;
+            }
+            display.addShape(currentShape);
+            updateDisplay();
+        }
+
+        if (!key) return;
         if (key && key.ctrl && key.name == 'c') {
             process.exit();
         }
@@ -123,6 +160,14 @@ if (process.argv.length > 2 && process.argv[2] == 'game') {
                 break;
             case "left":
                 currentShape.moveLeft();
+                updateDisplay();
+                break;
+            case "up":
+                currentShape.moveUp();
+                updateDisplay();
+                break;
+            case "down":
+                currentShape.moveDown();
                 updateDisplay();
                 break;
             case "space":
@@ -139,6 +184,20 @@ if (process.argv.length > 2 && process.argv[2] == 'game') {
                 currentShape.rotateLeft();
                 updateDisplay();
                 break;
+            case "p":
+                if (interval !== 0) {
+                    clearInterval(interval);
+                    interval = 0;
+                } else {
+                    interval = setInterval(updateGame, 500);
+                }
+                break;
+            // case "o":
+            // break;
+            case "c":
+                display.shapes = [];
+                shapes = [];
+                updateDisplay();
         }
     });
 
@@ -167,10 +226,17 @@ if (process.argv.length > 2 && process.argv[2] == 'game') {
         }
 
         currentShape.moveDown();
-        display.score += display.deleteFullRow([]);
+        let score = display.deleteFullRow([]);
+        display.score += score;
+        for (let i = 0; i < shapes.length; i++) {
+            if (shapes[i] == currentShape) continue;
+            while (!checkCollision(shapes[i])) {
+                shapes[i].moveDown();
+            }
+        }
         shapes = display.removeGarbage(shapes);
         updateDisplay();
     }
 
-    setInterval(updateGame, 500);
+    interval = setInterval(updateGame, 500);
 }
