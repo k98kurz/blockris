@@ -83,6 +83,7 @@ function calculateOffsetMatrix(shape){
     let offsetX = shape.position[0];
     let offsetY = shape.position[1];
     let offsetMatrix = [];
+    if (shape.matrix.length < 1) return [];
     for(let a = 0; a < shape.matrix.length + offsetY; a++){
         let newRow = [];
         for(let b = 0; b < shape.matrix[0].length + offsetX; b++){
