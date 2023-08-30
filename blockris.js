@@ -256,10 +256,10 @@ class Shape {
     }
 
     removeRow(offsetY) {
-        let rowNum = offsetY - this.position[1];
         let ymin = this.position[1];
         let ymax = ymin + this.matrix.length;
-        if (offsetY < ymin || offsetY > ymax) return 0;
+        if (offsetY < ymin || offsetY >= ymax) return 0;
+        let rowNum = offsetY - this.position[1];
         let row = this.matrix[rowNum];
         this.matrix.splice(rowNum, 1);
         this.moveDown();
